@@ -32,9 +32,9 @@ export async function pMap(items, fn, limit = 2) {
   return results;
 }
 
-async function getHtml(path) {
+async function getHtml(path, timeoutMs = Number(process.env.VLR_TIMEOUT || 7000)) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 9000);
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await fetch(toUrl(path), {
       headers: { 'User-Agent': UA, 'Accept-Encoding': 'gzip, deflate, br' },

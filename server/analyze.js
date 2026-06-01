@@ -136,7 +136,7 @@ export async function analyzeH2H(matchPath, fb1 = 'Team A', fb2 = 'Team B', even
   // scrape แบบจำกัด concurrency (รวมทั้ง 2 ทีม) — กัน OOM/CPU spike บน Render free
   const t1 = Date.now();
   const allPaths = [...pathsA, ...pathsB];
-  const allMatches = await pMap(allPaths, scrapeMatch, Number(process.env.H2H_CONC || 3));
+  const allMatches = await pMap(allPaths, scrapeMatch, Number(process.env.H2H_CONC || 8));
   console.log(`[h2h] scraped ${allPaths.length} pages in ${Date.now() - t1}ms  rss=${Math.round(process.memoryUsage().rss / 1048576)}MB`);
   let matchesA = allMatches.slice(0, pathsA.length);
   let matchesB = allMatches.slice(pathsA.length);
