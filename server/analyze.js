@@ -115,13 +115,13 @@ export async function analyzeH2H(matchPath, fb1 = 'Team A', fb2 = 'Team B', even
   let name2 = teams[1]?.name || fb2;
   let source = 'scraped';
 
-  // ดึงแมตช์ล่าสุดของแต่ละทีม (7 พอสำหรับสถิติ + มีตัวเลือกรายการ — เร็วกว่า 10)
+  // ดึงแมตช์ล่าสุดของแต่ละทีม (5 พอสำหรับสถิติ + มีตัวเลือกรายการ — เร็วขึ้น)
   let pathsA = [], pathsB = [];
   if (teams[0] && teams[1]) {
     try {
       [pathsA, pathsB] = await Promise.all([
-        teamRecentMatches(teams[0].id, teams[0].slug, 7),
-        teamRecentMatches(teams[1].id, teams[1].slug, 7),
+        teamRecentMatches(teams[0].id, teams[0].slug, 5),
+        teamRecentMatches(teams[1].id, teams[1].slug, 5),
       ]);
     } catch { /* ignore */ }
   }
