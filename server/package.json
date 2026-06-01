@@ -5,7 +5,7 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node --max-old-space-size=460 server.js",
     "dev": "node --watch server.js"
   },
   "engines": {

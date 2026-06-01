@@ -17,6 +17,21 @@ function toUrl(path) {
   return `${BASE}/${path.replace(/^\/+/, '')}`;
 }
 
+// map แบบจำกัด concurrency — กัน RAM หมด (OOM) บน Render free (512MB)
+// ยิงพร้อมกันแค่ `limit` ตัว แทนที่จะ 10 หน้าพร้อมกัน
+export async function pMap(items, fn, limit = 2) {
+  const results = new Array(items.length);
+  let i = 0;
+  async function worker() {
+    while (i < items.length) {
+      const idx = i++;
+      results[idx] = await fn(items[idx], idx);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
+
 async function getHtml(path) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 9000);

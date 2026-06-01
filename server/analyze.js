@@ -1,7 +1,7 @@
 // วิเคราะห์ H2H ของ 2 ทีมจากหน้าแมตช์ (upcoming) ของ vlr.gg
 //  1) form  = ฟอร์มล่าสุดของแต่ละทีม (per-map win rate + pistol R1/R13) จากแมตช์ที่จบแล้ว
 //  2) h2h   = ประวัติเจอกันโดยตรงของ 2 ทีมนี้
-import { matchTeams, teamRecentMatches, scrapeMatch } from './scraper.js';
+import { matchTeams, teamRecentMatches, scrapeMatch, pMap } from './scraper.js';
 
 const norm = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -130,10 +130,11 @@ export async function analyzeH2H(matchPath, fb1 = 'Team A', fb2 = 'Team B', even
   if (pathsA.length === 0) { pathsA = mockPaths(name1, 6); source = 'mock'; }
   if (pathsB.length === 0) { pathsB = mockPaths(name2, 6); source = 'mock'; }
 
-  let [matchesA, matchesB] = await Promise.all([
-    Promise.all(pathsA.map(scrapeMatch)),
-    Promise.all(pathsB.map(scrapeMatch)),
-  ]);
+  // scrape แบบจำกัด concurrency 2 (รวมทั้ง 2 ทีม) — กัน OOM บน Render free
+  const allPaths = [...pathsA, ...pathsB];
+  const allMatches = await pMap(allPaths, scrapeMatch, 2);
+  let matchesA = allMatches.slice(0, pathsA.length);
+  let matchesB = allMatches.slice(pathsA.length);
   if (matchesA[0]?.source === 'mock' || matchesB[0]?.source === 'mock') source = 'mock';
 
   // รายการทั้งหมดที่พบ (ไว้ให้ frontend ทำตัวกรอง) + จำนวนแมตช์ต่อรายการ
