@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<title>Valorant H2H</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+<style>
+:root{--bg:#0f1419;--panel:#1a2129;--panel2:#232c36;--accent:#ff4655;--accent2:#00c8c8;
+--text:#e7ecf0;--muted:#8b97a3;--line:#2a333d}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text)}
+.container{max-width:1080px;margin:0 auto;padding:24px 16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:22px;cursor:pointer}
+.brand .dot{width:12px;height:12px;background:var(--accent);border-radius:3px}
+.muted{color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px;transition:.15s}
+.card.click{cursor:pointer}.card.click:hover{border-color:var(--accent);transform:translateY(-2px)}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--panel2);color:var(--muted)}
+.tag.live{background:var(--accent);color:#fff}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.teams{font-weight:600;font-size:16px}
+.vsrow{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;margin-top:8px}
+.vsrow .t-l{text-align:left}
+.vsrow .t-r{text-align:right}
+.vsrow .vs{color:var(--muted);font-size:13px;font-weight:700}
+.score{font-weight:800;font-size:18px}
+.section-title{font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:24px 0 10px}
+.bar{height:26px;border-radius:6px;overflow:hidden;display:flex;background:#475569}
+.bar .a{background:var(--accent);display:flex;align-items:center;padding:0 8px;font-size:12px;font-weight:700;white-space:nowrap}
+.bar .b{background:var(--accent2);display:flex;align-items:center;justify-content:flex-end;padding:0 8px;font-size:12px;font-weight:700;color:#04201f;flex:1;white-space:nowrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat{text-align:center}.stat .n{font-size:26px;font-weight:800}
+.back{color:var(--muted);font-size:14px;margin:12px 0;display:inline-block;cursor:pointer}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer}
+.btn:hover{filter:brightness(1.1)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);font-size:14px}
+th{color:var(--muted);font-weight:600}
+.note{font-size:12px;color:var(--muted);margin-top:8px}
+.warn{background:#3a2a00;border:1px solid #6b4f00;color:#ffd35c;padding:8px 12px;border-radius:8px;font-size:13px;margin-bottom:12px}
+.fav{text-align:center;border-color:var(--accent)}
+.pill{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--panel2)}
+@media(max-width:560px){.grid2{grid-template-columns:1fr}}
+/* tabs + scoreboard */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin:14px 0 4px;overflow-x:auto}
+.tab{padding:10px 18px;font-weight:700;font-size:14px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tab.active{color:var(--text);border-bottom-color:var(--accent)}
+.tab.dis{opacity:.4;cursor:not-allowed}
+.mapbar{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.mapbtn{padding:8px 14px;border-radius:8px;background:var(--panel2);color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;border:1px solid transparent}
+.mapbtn.active{background:var(--accent);color:#fff}
+.mapbtn small{opacity:.7;margin-right:4px}
+.mhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:6px 0 14px}
+.mhead .t{font-weight:800;font-size:18px}.mhead .s{font-weight:800;font-size:26px}
+.sb{width:100%;border-collapse:collapse;font-size:13px}
+.sb th,.sb td{padding:6px 8px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+.sb th{color:var(--muted);font-weight:600;font-size:11px}
+.sb td.name{text-align:left;font-weight:700}
+.sb td.name small{display:block;color:var(--muted);font-weight:400;font-size:11px}
+.sb .ag{display:inline-block;background:var(--panel2);border-radius:4px;padding:1px 6px;font-size:11px;color:var(--accent2);margin-right:6px}
+.sb tr.t2{background:#1d2630}
+.rnds{display:flex;gap:3px;flex-wrap:wrap;margin:10px 0}
+.rnd{width:26px;text-align:center;font-size:10px}
+.rnd .n{color:var(--muted)}
+.rnd .b{height:20px;border-radius:3px;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:9px}
+.rnd .b.w1{background:var(--accent)}.rnd .b.w2{background:var(--accent2)}
+.sbwrap{overflow-x:auto}
+.tbltitle{font-weight:800;margin:14px 0 6px;color:var(--accent)}
+.tbltitle.c2{color:var(--accent2)}
+/* event filter */
+.filter{margin:8px 0 4px}
+.filter .lbl{font-size:12px;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.filter .lbl a{color:var(--accent2);cursor:pointer;font-weight:600}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:6px 12px;border-radius:20px;background:var(--panel2);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;border:1px solid transparent;display:flex;align-items:center;gap:6px}
+.chip.on{background:rgba(255,70,85,.15);color:var(--text);border-color:var(--accent)}
+.chip .ct{font-size:10px;opacity:.7}
+.chip .ck{font-size:11px}
+.mwin{font-weight:800;color:var(--text);background:rgba(255,70,85,.18);padding:1px 6px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="brand" onclick="showHome()"><span class="dot"></span> VALORANT H2H</div>
+  <div id="app"></div>
+</div>
+
+<script>
+const API = ''; // same-origin (เสิร์ฟจาก backend port 3000)
+const app = document.getElementById('app');
+const esc = (s)=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let liveTimer = null;
+
+async function getJSON(url){ const r = await fetch(API+url); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+
+// ---------- HOME ----------
+let upcomingAll = [];          // เก็บแมตช์ทั้งหมดที่ดึงมา
+let selectedEvents = null;     // Set ของชื่อรายการที่เลือก (null = ยังไม่ตั้ง = เลือกทั้งหมด)
+
+async function showHome(){
+  if(liveTimer) clearInterval(liveTimer);
+  location.hash = '';
+  app.innerHTML = `<p class="muted">ติดตามแมตช์ Valorant — คลิกแมตช์เพื่อดูวิเคราะห์ H2H</p>
+    <div id="live"></div>
+    <div class="section-title">📅 กำลังจะแข่ง</div>
+    <div id="filter"></div>
+    <div id="upcoming" class="muted">กำลังโหลด…</div>`;
+  loadUpcoming();
+  loadLive();
+  liveTimer = setInterval(loadLive, 20000); // near-realtime ทุก 20 วิ
+}
+
+async function loadUpcoming(){
+  try{
+    const data = await getJSON('/api/upcoming');
+    upcomingAll = data.filter(m=>m.team1 && m.team1!=='TBD');
+    // ครั้งแรก: เลือกทุกรายการ
+    if(selectedEvents===null){
+      selectedEvents = new Set(upcomingAll.map(m=>m.matchEvent||'อื่นๆ'));
+    }
+    renderFilter();
+    renderUpcoming();
+  }catch(e){
+    const el=document.getElementById('upcoming');
+    if(el) el.innerHTML = `<div class="warn">เชื่อมต่อ backend ไม่ได้ (${esc(e.message)}) — รัน <b>npm start</b> ในโฟลเดอร์ server แล้วเปิด http://localhost:3000</div>`;
+  }
+}
+
+function renderFilter(){
+  const el=document.getElementById('filter'); if(!el) return;
+  // นับจำนวนแมตช์ต่อรายการ
+  const counts={};
+  upcomingAll.forEach(m=>{ const k=m.matchEvent||'อื่นๆ'; counts[k]=(counts[k]||0)+1; });
+  const events=Object.keys(counts).sort();
+  if(events.length<=1){ el.innerHTML=''; return; }
+  const allOn = events.every(e=>selectedEvents.has(e));
+  el.innerHTML = `<div class="filter">
+    <div class="lbl"><span>เลือกรายการ (${selectedEvents.size}/${events.length})</span>
+      <a onclick="toggleAllEvents()">${allOn?'ล้างทั้งหมด':'เลือกทั้งหมด'}</a></div>
+    <div class="chips">`+
+    events.map(e=>{
+      const on=selectedEvents.has(e);
+      return `<div class="chip ${on?'on':''}" onclick="toggleEvent(${JSON.stringify(e)})">
+        <span class="ck">${on?'✓':''}</span>${esc(e)} <span class="ct">${counts[e]}</span></div>`;
+    }).join('')+`</div></div>`;
+}
+
+function renderUpcoming(){
+  const el=document.getElementById('upcoming'); if(!el) return;
+  const list=upcomingAll.filter(m=>selectedEvents.has(m.matchEvent||'อื่นๆ'));
+  el.innerHTML = list.length ? list.map(matchCard).join('')
+    : '<div class="muted">ไม่มีแมตช์ในรายการที่เลือก</div>';
+}
+
+function toggleEvent(name){
+  if(selectedEvents.has(name)) selectedEvents.delete(name); else selectedEvents.add(name);
+  renderFilter(); renderUpcoming();
+}
+function toggleAllEvents(){
+  const events=[...new Set(upcomingAll.map(m=>m.matchEvent||'อื่นๆ'))];
+  const allOn=events.every(e=>selectedEvents.has(e));
+  selectedEvents = allOn ? new Set() : new Set(events);
+  renderFilter(); renderUpcoming();
+}
+
+async function loadLive(){
+  try{
+    const data = await getJSON('/api/live');
+    const el = document.getElementById('live');
+    if(!el) return;
+    const list = (data||[]).filter(m=>m.team1 && m.team1!=='TBD');
+    el.innerHTML = list.length ? `<div class="section-title">🔴 กำลังแข่งสด</div>`+
+      list.map(m=>liveCard(m)).join('') : '';
+  }catch(e){/* ignore */}
+}
+
+function actions(m){
+  return `<div class="row" style="margin-top:10px;gap:8px;justify-content:flex-start">
+    <button class="btn" onclick='event.stopPropagation();openH2H(${JSON.stringify(m)})'>🔮 วิเคราะห์ H2H</button>
+    <button class="btn" style="background:var(--panel2)" onclick='event.stopPropagation();openScoreboard(${JSON.stringify(m)})'>📋 Scoreboard</button>
+  </div>`;
+}
+function matchCard(m){
+  return `<div class="card click" onclick='openH2H(${JSON.stringify(m)})'>
+    <div class="row"><span class="tag">${esc(m.matchSeries||'Match')}</span>
+      <span class="muted">${esc(m.matchEvent)}</span></div>
+    <div class="vsrow">
+      <span class="teams t-l">${esc(m.team1)}</span>
+      <span class="vs">vs</span>
+      <span class="teams t-r">${esc(m.team2)}</span></div>
+    <div class="muted" style="font-size:12px;margin-top:6px">⏱ ${esc(m.timeUntil)}</div>
+    ${actions(m)}
+  </div>`;
+}
+function liveCard(m){
+  return `<div class="card click" onclick='openScoreboard(${JSON.stringify(m)})'>
+    <div class="row"><span class="tag live">LIVE</span><span class="muted">${esc(m.matchEvent)}</span></div>
+    <div class="vsrow">
+      <span class="teams t-l">${esc(m.team1)}</span>
+      <span class="score">${esc(m.score1)} : ${esc(m.score2)}</span>
+      <span class="teams t-r">${esc(m.team2)}</span></div>
+    ${m.currentMap?`<div class="muted" style="font-size:12px;margin-top:6px">แมปปัจจุบัน: ${esc(m.currentMap)}</div>`:''}
+    ${actions(m)}
+  </div>`;
+}
+
+// ---------- H2H ----------
+let currentMatch = null;
+let h2hEvents = null;   // Set ของรายการที่เลือกใช้ในการวิเคราะห์ (null = ทั้งหมด)
+
+async function openH2H(m, keepFilter){
+  if(liveTimer) clearInterval(liveTimer);
+  currentMatch = m;
+  if(!keepFilter) h2hEvents = null; // เปิดใหม่จากแมตช์อื่น → รีเซ็ตตัวกรอง
+  window.scrollTo(0,0);
+  app.innerHTML = `<span class="back" onclick="showHome()">← กลับหน้าแรก</span>
+    <h2 style="margin:4px 0">${esc(m.team1)} <span class="muted">vs</span> ${esc(m.team2)}</h2>
+    <div class="muted">กำลังวิเคราะห์ (ดึงประวัติแมตช์จาก vlr.gg อาจใช้เวลาสักครู่)…</div>`;
+  try{
+    let q = `?path=${encodeURIComponent(m.matchPage||'')}&team1=${encodeURIComponent(m.team1)}&team2=${encodeURIComponent(m.team2)}`;
+    if(h2hEvents && h2hEvents.size) q += `&events=${encodeURIComponent([...h2hEvents].join('|'))}`;
+    const d = await getJSON('/api/h2h'+q);
+    renderH2H(d);
+  }catch(e){
+    app.innerHTML += `<div class="warn">วิเคราะห์ไม่สำเร็จ: ${esc(e.message)}</div>`;
+  }
+}
+
+// toggle รายการแล้ววิเคราะห์ใหม่
+function toggleH2HEvent(name, allEvents){
+  if(h2hEvents===null) h2hEvents = new Set(allEvents); // เริ่มจาก "ทั้งหมด"
+  if(h2hEvents.has(name)) h2hEvents.delete(name); else h2hEvents.add(name);
+  if(h2hEvents.size===0) h2hEvents = new Set(allEvents); // กันเลือกว่าง → กลับเป็นทั้งหมด
+  openH2H(currentMatch, true);
+}
+function resetH2HEvents(){ h2hEvents=null; openH2H(currentMatch, true); }
+
+function h2hFilterBar(d){
+  const events=(d.availableEvents||[]).map(e=>e.event);
+  if(events.length<=1) return '';
+  const sel = h2hEvents || new Set(events);
+  const chips = d.availableEvents.map(({event,count})=>{
+    const on=sel.has(event);
+    return `<div class="chip ${on?'on':''}" onclick='toggleH2HEvent(${JSON.stringify(event)},${JSON.stringify(events)})'>
+      <span class="ck">${on?'✓':''}</span>${esc(event)} <span class="ct">${count}</span></div>`;
+  }).join('');
+  return `<div class="filter"><div class="lbl">
+      <span>📂 เลือกรายการที่ใช้วิเคราะห์ (${sel.size}/${events.length})</span>
+      <a onclick="resetH2HEvents()">ใช้ทั้งหมด</a></div>
+    <div class="chips">${chips}</div></div>`;
+}
+
+function favored(d){
+  const f1=d.form.team1, f2=d.form.team2;
+  // ถ่วงน้ำหนัก: ฟอร์มแมป 45% + pistol 25% + ประวัติเจอกัน 30%
+  let s1 = f1.mapWinRate*0.45 + f1.pistol.overallRate*0.25;
+  let s2 = f2.mapWinRate*0.45 + f2.pistol.overallRate*0.25;
+  if(d.h2h.meetings>0){ s1 += d.h2h.team1WinRate*0.30; s2 += d.h2h.team2WinRate*0.30; }
+  else { s1 += 15; s2 += 15; }
+  if(Math.abs(s1-s2)<3) return {name:'สูสี',pct:50};
+  const win = s1>s2 ? d.team1.name : d.team2.name;
+  return {name:win, pct:Math.round(Math.max(s1,s2)/(s1+s2)*100)};
+}
+
+function renderH2H(d){
+  const t1=esc(d.team1.name), t2=esc(d.team2.name);
+  const fv=favored(d);
+  let html = `<span class="back" onclick="showHome()">← กลับหน้าแรก</span>
+    <h2 style="margin:4px 0 2px">${t1} <span class="muted">vs</span> ${t2}</h2>`;
+  if(d.source!=='scraped')
+    html += `<div class="warn">⚠️ ข้อมูลบางส่วนเป็น <b>mock</b> (vlr.gg ดึงไม่ครบ/ทีมไม่มีประวัติพอ) — โครงสร้างถูกต้อง พร้อมต่อข้อมูลจริง</div>`;
+
+  // ปุ่มไป scoreboard
+  if(currentMatch)
+    html += `<button class="btn" style="background:var(--panel2);margin-bottom:8px" onclick='openScoreboard(${JSON.stringify(currentMatch)})'>📋 ดู Scoreboard เต็มของแมตช์นี้</button>`;
+
+  // ตัวกรองรายการที่ใช้วิเคราะห์
+  html += h2hFilterBar(d);
+  if(d.filtered)
+    html += `<div class="note" style="margin-bottom:8px">⚙️ วิเคราะห์จากเฉพาะรายการที่เลือก</div>`;
+
+  // ได้เปรียบ
+  html += `<div class="card fav"><div class="muted">🔮 ทีมที่ได้เปรียบ</div>
+    <div style="font-size:24px;font-weight:800;margin-top:4px">${esc(fv.name)} ${fv.name!=='สูสี'?`(${fv.pct}%)`:''}</div></div>`;
+
+  // ประวัติเจอกัน
+  html += `<div class="section-title">⚔️ ประวัติเจอกันโดยตรง (${d.h2h.meetings} แมตช์)</div>`;
+  if(d.h2h.meetings>0){
+    html += `<div class="card">
+      <div class="bar"><div class="a" style="width:${d.h2h.team1WinRate}%">${t1} ${d.h2h.team1WinRate}%</div>
+      <div class="b">${d.h2h.team2WinRate}% ${t2}</div></div>
+      <div class="note">แมปที่ชนะกัน: ${t1} ${d.h2h.team1MapWins} – ${d.h2h.team2MapWins} ${t2}</div></div>`;
+    html += pistolBlock(t1,t2,d.h2h.pistol.team1,d.h2h.pistol.team2,d.h2h.pistol.team1Rate,d.h2h.pistol.team2Rate);
+    if(d.h2h.maps.length) html += mapTable(t1,t2,d.h2h.maps);
+  } else {
+    html += `<div class="card muted">ไม่พบประวัติที่ 2 ทีมนี้เคยเจอกัน (ในแมตช์ล่าสุดที่ดึงมา)</div>`;
+  }
+
+  // เทียบอัตราชนะรายแมป (ทุกด่าน) — ใครชนะ% มากกว่า
+  html += `<div class="section-title">🗺️ เทียบอัตราชนะรายแมป (ทุกด่าน)</div>`;
+  html += mapWinComparison(d);
+
+  // ฟอร์มล่าสุด
+  html += `<div class="section-title">📊 ฟอร์มล่าสุด (per-map win rate + pistol)</div>`;
+  html += `<div class="grid2">${formCard(d.form.team1)}${formCard(d.form.team2)}</div>`;
+
+  app.innerHTML = html;
+}
+
+// เทียบ winRate รายแมปของ 2 ทีม แล้วบอกว่าใครได้เปรียบในแต่ละด่าน
+function mapWinComparison(d){
+  const t1=esc(d.team1.name), t2=esc(d.team2.name);
+  const m1={}, m2={};
+  (d.form.team1.maps||[]).forEach(m=>m1[m.map]=m);
+  (d.form.team2.maps||[]).forEach(m=>m2[m.map]=m);
+  const names=[...new Set([...Object.keys(m1),...Object.keys(m2)])];
+  if(!names.length) return `<div class="card muted">ไม่มีข้อมูลรายแมป</div>`;
+
+  // เรียงตามจำนวนแมปที่เล่นรวม (มากไปน้อย)
+  names.sort((a,b)=>((m2[b]?.played||0)+(m1[b]?.played||0))-((m2[a]?.played||0)+(m1[a]?.played||0)));
+
+  let t1Better=0, t2Better=0;
+  const rows = names.map(name=>{
+    const a=m1[name], b=m2[name];
+    const wr1=a?a.winRate:null, wr2=b?b.winRate:null;
+    let lead='', cls1='', cls2='';
+    if(wr1!=null && wr2!=null){
+      if(wr1>wr2){ lead=t1; cls1='mwin'; t1Better++; }
+      else if(wr2>wr1){ lead=t2; cls2='mwin'; t2Better++; }
+      else lead='เสมอ';
+    } else if(wr1!=null){ lead=t1+' (มีข้อมูลฝั่งเดียว)'; }
+    else { lead=t2+' (มีข้อมูลฝั่งเดียว)'; }
+    const cell=(m,cls)=> m?`<span class="${cls}">${m.winRate}%</span> <span class="muted">(${m.won}/${m.played})</span>`:`<span class="muted">—</span>`;
+    return `<tr>
+      <td style="text-align:left;font-weight:700">${esc(name)}</td>
+      <td>${cell(a,cls1)}</td>
+      <td>${cell(b,cls2)}</td>
+      <td style="font-weight:700;color:${lead===t1?'var(--accent)':lead===t2?'var(--accent2)':'var(--muted)'}">${esc(lead)}</td>
+    </tr>`;
+  }).join('');
+
+  const summary = t1Better===t2Better
+    ? `สูสี (${t1} ชนะ ${t1Better} ด่าน, ${t2} ชนะ ${t2Better} ด่าน)`
+    : (t1Better>t2Better?t1:t2)+` ได้เปรียบมากกว่า (${Math.max(t1Better,t2Better)} จาก ${names.length} ด่าน)`;
+
+  return `<div class="card">
+    <div class="note" style="margin-bottom:8px">📌 ${esc(summary)}</div>
+    <div class="sbwrap"><table>
+      <thead><tr><th style="text-align:left">แมป</th><th>${t1}</th><th>${t2}</th><th>ได้เปรียบ</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+    <div class="note" style="margin-top:8px">* คิดจากฟอร์มล่าสุดของแต่ละทีม (ตามรายการที่เลือกด้านบน) — ตัวเลขในวงเล็บคือ ชนะ/เล่น</div>
+  </div>`;
+}
+
+function pistolBlock(t1,t2,p1,p2,rate1,rate2){
+  return `<div class="grid2">
+    <div class="card"><div class="muted" style="font-size:13px">Round 1 (pistol ครึ่งแรก)</div>
+      <div class="row" style="margin-top:6px">
+        <span class="stat"><div class="n">${p1.r1}</div><div class="muted">${t1}</div></span>
+        <span class="muted">vs</span>
+        <span class="stat"><div class="n">${p2.r1}</div><div class="muted">${t2}</div></span></div></div>
+    <div class="card"><div class="muted" style="font-size:13px">Round 13 (pistol ครึ่งหลัง)</div>
+      <div class="row" style="margin-top:6px">
+        <span class="stat"><div class="n">${p1.r13}</div><div class="muted">${t1}</div></span>
+        <span class="muted">vs</span>
+        <span class="stat"><div class="n">${p2.r13}</div><div class="muted">${t2}</div></span></div></div>
+  </div>
+  <div class="card"><div class="bar"><div class="a" style="width:${rate1}%">Pistol ${rate1}%</div>
+    <div class="b">${rate2}% Pistol</div></div><div class="note">อัตราชนะ pistol รวม R1+R13</div></div>`;
+}
+
+function mapTable(t1,t2,maps){
+  return `<div class="card"><table><thead><tr><th>แมป</th><th>${t1}</th><th>เทียบ</th><th>${t2}</th></tr></thead><tbody>`+
+    maps.map(m=>`<tr><td style="text-align:left;font-weight:600">${esc(m.map)}</td>
+      <td>${m.team1WinRate}% (${m.team1Wins})</td>
+      <td><div class="bar" style="height:14px"><div class="a" style="width:${m.team1WinRate}%"></div><div class="b"></div></div></td>
+      <td>${100-m.team1WinRate}% (${m.team2Wins})</td></tr>`).join('')+
+    `</tbody></table></div>`;
+}
+
+function formCard(f){
+  const maps = f.maps.slice(0,6).map(m=>`<tr><td style="text-align:left">${esc(m.map)}</td>
+    <td>${m.winRate}%</td><td class="muted">${m.won}/${m.played}</td></tr>`).join('');
+  return `<div class="card">
+    <div style="font-weight:800;font-size:16px;margin-bottom:6px">${esc(f.name)}</div>
+    <div class="row"><span class="muted">ชนะแมปรวม</span><span><b>${f.mapWinRate}%</b> <span class="muted">(${f.mapWins}/${f.mapsPlayed})</span></span></div>
+    <div class="row" style="margin-top:4px"><span class="muted">Pistol R1</span><span><b>${f.pistol.r1Rate}%</b></span></div>
+    <div class="row" style="margin-top:4px"><span class="muted">Pistol R13</span><span><b>${f.pistol.r13Rate}%</b></span></div>
+    <div class="row" style="margin-top:4px"><span class="muted">Pistol รวม</span><span class="pill">${f.pistol.overallRate}%</span></div>
+    ${maps?`<table style="margin-top:10px"><thead><tr><th style="text-align:left">แมป</th><th>ชนะ%</th><th>W/P</th></tr></thead><tbody>${maps}</tbody></table>`:''}
+  </div>`;
+}
+
+// ---------- SCOREBOARD ----------
+let sbData = null, sbTab = 'overview', sbMapIdx = 0;
+
+async function openScoreboard(m){
+  if(liveTimer) clearInterval(liveTimer);
+  currentMatch = m;
+  window.scrollTo(0,0);
+  app.innerHTML = `<span class="back" onclick="showHome()">← กลับหน้าแรก</span>
+    <h2 style="margin:4px 0">${esc(m.team1)} <span class="muted">vs</span> ${esc(m.team2)}</h2>
+    <div class="muted">กำลังโหลด scoreboard จาก vlr.gg…</div>`;
+  try{
+    const d = await getJSON('/api/scoreboard?path='+encodeURIComponent(m.matchPage||''));
+    sbData = d; sbTab='overview';
+    // เริ่มที่แมปจริงแมปแรก (ข้าม All Maps ถ้ามี)
+    sbMapIdx = d.maps.findIndex(x=>!x.isAll); if(sbMapIdx<0) sbMapIdx=0;
+    renderScoreboard();
+  }catch(e){
+    app.innerHTML += `<div class="warn">โหลด scoreboard ไม่สำเร็จ: ${esc(e.message)}</div>`;
+  }
+}
+
+function renderScoreboard(){
+  const d=sbData; if(!d) return;
+  const t1=esc(d.teams[0]||currentMatch.team1), t2=esc(d.teams[1]||currentMatch.team2);
+  let html = `<span class="back" onclick="showHome()">← กลับหน้าแรก</span>
+    <div class="row"><h2 style="margin:4px 0">${t1} <span class="muted">vs</span> ${t2}</h2>
+    ${currentMatch?`<button class="btn" onclick='openH2H(${JSON.stringify(currentMatch)})'>🔮 วิเคราะห์ H2H</button>`:''}</div>
+    <div class="muted" style="font-size:13px">${esc(d.event||currentMatch.matchEvent||'')}</div>`;
+
+  if(d.source==='empty')
+    html += `<div class="warn">แมตช์นี้ยังไม่มีข้อมูลสถิติ (อาจยังไม่เริ่มแข่ง หรือ vlr.gg ยังไม่อัปเดต) — ลองใหม่เมื่อแมตช์เริ่ม/จบ</div>`;
+  if(d.source==='error')
+    html += `<div class="warn">ดึงข้อมูลไม่ได้: ${esc(d.error||'')}</div>`;
+
+  // tabs
+  html += `<div class="tabs">
+    <div class="tab ${sbTab==='overview'?'active':''}" onclick="setTab('overview')">📊 Overview</div>
+    <div class="tab ${sbTab==='economy'?'active':''}" onclick="setTab('economy')">💰 Economy</div>
+    <div class="tab ${sbTab==='performance'?'active':''}" onclick="setTab('performance')">⚔️ Performance</div>
+  </div>`;
+
+  // map selector
+  html += `<div class="mapbar">`;
+  d.maps.forEach((m,i)=>{
+    const label = m.isAll ? 'All Maps' : m.name;
+    const sc = m.isAll ? '' : `<small>${m.score1??''}-${m.score2??''}</small>`;
+    html += `<div class="mapbtn ${i===sbMapIdx?'active':''}" onclick="setMap(${i})">${sc}${esc(label)}</div>`;
+  });
+  html += `</div>`;
+
+  const map = d.maps[sbMapIdx];
+  if(!map){ app.innerHTML = html+'<div class="muted">ไม่มีข้อมูลแมป</div>'; return; }
+
+  if(sbTab==='overview') html += renderOverview(map,t1,t2);
+  else if(sbTab==='economy') html += renderEconomy(map);
+  else html += renderPerformance(map,t1,t2);
+
+  app.innerHTML = html;
+}
+
+function setTab(t){ sbTab=t; renderScoreboard(); }
+function setMap(i){ sbMapIdx=i; renderScoreboard(); }
+
+function renderOverview(map,t1,t2){
+  let h='';
+  if(!map.isAll){
+    h += `<div class="mhead">
+      <span class="t">${t1}</span>
+      <span class="s">${map.score1??''} <span class="muted">:</span> ${map.score2??''}</span>
+      <span class="t">${t2}</span></div>`;
+    // round-by-round
+    if(map.rounds && map.rounds.length){
+      h += `<div class="sbwrap"><div class="rnds">`+
+        map.rounds.map(r=>`<div class="rnd"><div class="n">${r.n}</div>
+          <div class="b w${r.winner}" title="${esc(r.how||'')}">${howIcon(r.how)}</div></div>`).join('')+
+        `</div></div>`;
+    }
+  }
+  h += `<div class="sbwrap"><div class="tbltitle">${t1}</div>${statTable(map.team1Players)}</div>`;
+  h += `<div class="sbwrap"><div class="tbltitle c2">${t2}</div>${statTable(map.team2Players,true)}</div>`;
+  return h;
+}
+
+function howIcon(how){
+  if(!how) return '';
+  if(/elim/.test(how)) return '☠';
+  if(/defuse/.test(how)) return '✂';
+  if(/boom|spike|explo/.test(how)) return '💣';
+  if(/time/.test(how)) return '⏱';
+  return '';
+}
+
+function statTable(players,t2){
+  if(!players||!players.length) return '<div class="muted" style="margin-bottom:14px">ไม่มีข้อมูลผู้เล่น</div>';
+  const head=['R','ACS','K','D','A','+/-','KAST','ADR','HS%','FK','FD'];
+  return `<table class="sb"><thead><tr><th style="text-align:left">ผู้เล่น</th>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>`+
+    players.map(p=>`<tr class="${t2?'t2':''}">
+      <td class="name"><span class="ag">${esc(p.agent||'?')}</span>${esc(p.name)}<small>${esc(p.team||'')}</small></td>
+      <td>${esc(p.r)}</td><td>${esc(p.acs)}</td><td>${esc(p.k)}</td><td>${esc(p.d)}</td><td>${esc(p.a)}</td>
+      <td>${esc(p.pm)}</td><td>${esc(p.kast)}</td><td>${esc(p.adr)}</td><td>${esc(p.hs)}</td>
+      <td>${esc(p.fk)}</td><td>${esc(p.fd)}</td></tr>`).join('')+
+    `</tbody></table>`;
+}
+
+function renderEconomy(map){
+  // vlr.gg ใส่ economy ในหน้าแยก (tab) ซึ่งบางแมตช์ไม่มีใน HTML หลัก
+  return `<div class="card muted">ℹ️ ข้อมูล Economy (เงิน/ประเภทการซื้อแต่ละรอบ) vlr.gg โหลดผ่าน tab แยก
+    — ดูได้ที่ <a style="color:var(--accent2)" target="_blank" href="https://www.vlr.gg/${esc((currentMatch&&currentMatch.matchPage)||'')}/?tab=economy">หน้า Economy บน vlr.gg</a><br>
+    (ส่วนนี้ scrape เพิ่มได้ แต่ต้องยิงอีก request ไปที่ ?tab=economy — บอกได้ถ้าอยากให้ทำต่อ)</div>`;
+}
+
+function renderPerformance(map,t1,t2){
+  // Performance = duel matrix (ใครฆ่าใคร) อยู่ใน tab แยกเช่นกัน
+  return `<div class="card muted">⚔️ Performance (duel matrix — ใครได้เปรียบใคร, multikills) อยู่ใน tab แยกของ vlr.gg
+    — ดูได้ที่ <a style="color:var(--accent2)" target="_blank" href="https://www.vlr.gg/${esc((currentMatch&&currentMatch.matchPage)||'')}/?tab=performance">หน้า Performance บน vlr.gg</a><br>
+    (scrape เพิ่มได้ บอกได้ถ้าอยากให้ทำต่อ)</div>`;
+}
+
+showHome();
+</script>
+</body>
+</html>

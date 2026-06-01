@@ -1,0 +1,15 @@
+# Render Blueprint — deploy อัตโนมัติเมื่อเชื่อม repo นี้
+# docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: valorant-h2h
+    runtime: node
+    plan: free
+    rootDir: server          # โค้ด backend อยู่ในโฟลเดอร์ server/
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    healthCheckPath: /api/upcoming
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
