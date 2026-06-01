@@ -42,7 +42,10 @@ app.get('/api/results', (req, res) => vlr.results().then(ok(res)).catch(fail(res
 app.get('/api/h2h', (req, res) => {
   const { path = '', team1 = 'Team A', team2 = 'Team B', events = '' } = req.query;
   const eventFilter = events ? String(events).split('|').filter(Boolean) : null;
-  analyzeH2H(String(path), String(team1), String(team2), eventFilter).then(ok(res)).catch(fail(res));
+  const t = Date.now();
+  analyzeH2H(String(path), String(team1), String(team2), eventFilter)
+    .then((d) => { console.log(`[h2h] DONE ${Date.now() - t}ms ${team1} vs ${team2}`); res.json(d); })
+    .catch((err) => { console.error(`[h2h] FAIL ${Date.now() - t}ms`, err); fail(res)(err); });
 });
 
 // scoreboard เต็มของแมตช์ — /api/scoreboard?path=681338/...

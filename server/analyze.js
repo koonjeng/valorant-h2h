@@ -115,24 +115,29 @@ export async function analyzeH2H(matchPath, fb1 = 'Team A', fb2 = 'Team B', even
   let name2 = teams[1]?.name || fb2;
   let source = 'scraped';
 
-  // ดึงแมตช์ล่าสุดของแต่ละทีม (5 พอสำหรับสถิติ + มีตัวเลือกรายการ — เร็วขึ้น)
+  // ดึงแมตช์ล่าสุดของแต่ละทีม (4 หน้า/ทีม — ลด CPU parse บน Render free ที่ถูก throttle)
+  const N = Number(process.env.H2H_MATCHES || 4);
+  const t0 = Date.now();
   let pathsA = [], pathsB = [];
   if (teams[0] && teams[1]) {
     try {
       [pathsA, pathsB] = await Promise.all([
-        teamRecentMatches(teams[0].id, teams[0].slug, 5),
-        teamRecentMatches(teams[1].id, teams[1].slug, 5),
+        teamRecentMatches(teams[0].id, teams[0].slug, N),
+        teamRecentMatches(teams[1].id, teams[1].slug, N),
       ]);
     } catch { /* ignore */ }
   }
+  console.log(`[h2h] teams+lists ${Date.now() - t0}ms  A=${pathsA.length} B=${pathsB.length}`);
 
   // ถ้าไม่มี path จริง → mock
   if (pathsA.length === 0) { pathsA = mockPaths(name1, 6); source = 'mock'; }
   if (pathsB.length === 0) { pathsB = mockPaths(name2, 6); source = 'mock'; }
 
-  // scrape แบบจำกัด concurrency 2 (รวมทั้ง 2 ทีม) — กัน OOM บน Render free
+  // scrape แบบจำกัด concurrency (รวมทั้ง 2 ทีม) — กัน OOM/CPU spike บน Render free
+  const t1 = Date.now();
   const allPaths = [...pathsA, ...pathsB];
-  const allMatches = await pMap(allPaths, scrapeMatch, 2);
+  const allMatches = await pMap(allPaths, scrapeMatch, Number(process.env.H2H_CONC || 3));
+  console.log(`[h2h] scraped ${allPaths.length} pages in ${Date.now() - t1}ms  rss=${Math.round(process.memoryUsage().rss / 1048576)}MB`);
   let matchesA = allMatches.slice(0, pathsA.length);
   let matchesB = allMatches.slice(pathsA.length);
   if (matchesA[0]?.source === 'mock' || matchesB[0]?.source === 'mock') source = 'mock';
