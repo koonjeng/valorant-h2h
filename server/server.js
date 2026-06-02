@@ -9,8 +9,15 @@ import { scrapeScoreboard } from './scoreboard.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 app.use(cors());
+// กัน browser cache หน้า HTML เก่า → เห็นอัปเดตทันทีทุกครั้งที่ deploy ใหม่
+app.use((req, res, next) => {
+  if (req.path === '/' || req.path.endsWith('.html')) {
+    res.set('Cache-Control', 'no-store, must-revalidate');
+  }
+  next();
+});
 // เสิร์ฟหน้าเว็บไฟล์เดียวจาก ../public  → เปิด http://localhost:3000
-app.use(express.static(join(__dirname, '..', 'public')));
+app.use(express.static(join(__dirname, '..', 'public'), { etag: true, maxAge: 0 }));
 
 const ok = (res) => (data) => res.json(data);
 const fail = (res) => (err) => res.status(500).json({ error: String(err && err.message || err) });
