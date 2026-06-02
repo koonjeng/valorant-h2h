@@ -273,17 +273,19 @@ function resetH2HEvents(){ h2hEvents=null; openH2H(currentMatch, true); }
 
 function h2hFilterBar(d){
   const events=(d.availableEvents||[]).map(e=>e.event);
-  if(events.length<=1) return '';
+  if(events.length===0) return ''; // ไม่มีข้อมูลรายการจริงๆ ค่อยซ่อน
   const sel = h2hEvents || new Set(events);
+  const single = events.length===1;
   const chips = d.availableEvents.map(({event,count})=>{
     const on=sel.has(event);
     return `<div class="chip ${on?'on':''}" onclick='toggleH2HEvent(${esc(JSON.stringify(event))},${esc(JSON.stringify(events))})'>
       <span class="ck">${on?'✓':''}</span>${esc(event)} <span class="ct">${count}</span></div>`;
   }).join('');
   return `<div class="filter"><div class="lbl">
-      <span>📂 เลือกรายการที่ใช้วิเคราะห์ (${sel.size}/${events.length})</span>
-      <a onclick="resetH2HEvents()">ใช้ทั้งหมด</a></div>
-    <div class="chips">${chips}</div></div>`;
+      <span>📂 รายการที่ใช้วิเคราะห์ฟอร์ม (${sel.size}/${events.length})</span>
+      ${single?'':`<a onclick="resetH2HEvents()">ใช้ทั้งหมด</a>`}</div>
+    <div class="chips">${chips}</div>
+    ${single?'<div class="note">* ทั้ง 2 ทีมมีข้อมูลจากรายการนี้รายการเดียว</div>':''}</div>`;
 }
 
 function favored(d){
