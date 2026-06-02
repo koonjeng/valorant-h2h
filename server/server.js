@@ -54,9 +54,43 @@ app.get('/api/scoreboard', (req, res) => {
   scrapeScoreboard(String(path)).then(ok(res)).catch(fail(res));
 });
 
+// health check (เบาๆ ไว้ keep-alive ping)
+app.get('/healthz', (req, res) => res.json({ ok: true, t: Date.now() }));
+
 // กัน process ตายจาก error ที่ไม่ได้ดัก (ทำให้ Render ไม่ crash → ไม่ 502)
 process.on('unhandledRejection', (e) => console.error('unhandledRejection:', e));
 process.on('uncaughtException', (e) => console.error('uncaughtException:', e));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ http://localhost:${PORT}`));
+
+// ---- Keep-alive: ping ตัวเองทุก 10 นาที กัน Render free หลับ ----
+// ตั้ง SELF_URL = URL ของเว็บบน Render (เช่น https://valorant-h2h.onrender.com)
+const SELF_URL = process.env.SELF_URL || process.env.RENDER_EXTERNAL_URL;
+if (SELF_URL) {
+  setInterval(async () => {
+    try {
+      await fetch(`${SELF_URL.replace(/\/$/, '')}/healthz`);
+      console.log('[keepalive] ping ok');
+    } catch (e) { console.log('[keepalive] ping fail', String(e && e.message)); }
+  }, 10 * 60 * 1000); // ทุก 10 นาที (Render หลับที่ 15 นาที)
+  console.log(`⏰ keep-alive on: ${SELF_URL}`);
+}
+
+// ---- Pre-warm: หลัง start แอบ scrape H2H ของแมตช์ที่จะแข่งไว้ล่วงหน้า ----
+// ทำให้คู่แรกๆ ที่ผู้ใช้กดมี cache แล้ว ขึ้นเร็ว
+async function prewarm() {
+  try {
+    const list = await vlr.upcoming();
+    const targets = (list || []).filter((m) => m.team1 && m.team1 !== 'TBD' && m.matchPage).slice(0, 6);
+    console.log(`[prewarm] warming ${targets.length} matches…`);
+    for (const m of targets) {
+      try { await analyzeH2H(m.matchPage, m.team1, m.team2); } catch { /* ignore */ }
+    }
+    console.log('[prewarm] done');
+  } catch (e) { console.log('[prewarm] skip:', String(e && e.message)); }
+}
+if (process.env.PREWARM !== '0') {
+  setTimeout(prewarm, 5000);            // หลัง start 5 วิ
+  setInterval(prewarm, 12 * 60 * 1000); // อุ่นซ้ำทุก 12 นาที (กัน cache หมดอายุ)
+}
