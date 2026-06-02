@@ -9,7 +9,7 @@ services:
     buildCommand: npm install
     startCommand: npm start
     autoDeploy: true
-    healthCheckPath: /api/upcoming
+    healthCheckPath: /healthz      # endpoint เบา ตอบทันที (ไม่ scrape) — กัน health check timeout/restart วน
     envVars:
       - key: NODE_VERSION
         value: "20"
