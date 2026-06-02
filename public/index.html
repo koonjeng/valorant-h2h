@@ -298,6 +298,51 @@ function favored(d){
   return {name:win, pct:Math.round(Math.max(s1,s2)/(s1+s2)*100)};
 }
 
+// ทำนายปืนพก (pistol) — ใช้ pistol overall rate ของแต่ละทีม (ถ้ามีประวัติเจอกันใช้ก่อน)
+function pistolPredictCard(d,t1,t2){
+  // ถ้ามีประวัติเจอกันโดยตรง ใช้ค่านั้น (แม่นกว่า) ไม่งั้นใช้ฟอร์มแยกของแต่ละทีม
+  let p1, p2, src;
+  if(d.h2h.meetings>0 && (d.h2h.pistol.team1Rate+d.h2h.pistol.team2Rate)>0){
+    p1=d.h2h.pistol.team1Rate; p2=d.h2h.pistol.team2Rate; src='ประวัติเจอกัน';
+  } else {
+    p1=d.form.team1.pistol.overallRate; p2=d.form.team2.pistol.overallRate; src='ฟอร์มล่าสุดแต่ละทีม';
+  }
+  // normalize ให้รวม 100 เพื่อเทียบ
+  const sum=p1+p2 || 1;
+  const w1=Math.round(p1/sum*100), w2=100-w1;
+  const winner = Math.abs(w1-w2)<6 ? 'สูสี' : (w1>w2?t1:t2);
+  return `<div class="card">
+    <div class="muted" style="font-size:13px">🔫 ปืนพก (pistol) ใครชนะ</div>
+    <div style="font-size:20px;font-weight:800;margin:6px 0">${esc(winner)}${winner!=='สูสี'?` (${Math.max(w1,w2)}%)`:''}</div>
+    <div class="bar"><div class="a" style="width:${w1}%">${t1} ${w1}%</div><div class="b">${w2}% ${t2}</div></div>
+    <div class="note">อิงอัตราชนะ pistol (R1+R13) — จาก${src}</div>
+  </div>`;
+}
+
+// ทำนายสกอร์รวมเกิน 21.5 ไหม (over/under total rounds ต่อแมป)
+function totalsPredictCard(d){
+  const a=d.form.team1.totals, b=d.form.team2.totals;
+  const mapsN=(a?.maps||0)+(b?.maps||0);
+  if(!mapsN) return `<div class="card muted">🎲 ไม่มีข้อมูล total rounds พอสำหรับทำนาย over/under</div>`;
+  // เฉลี่ยรวม + อัตราที่เคยเกิน 21.5
+  const avg=Math.round((((a.avgRounds*a.maps)+(b.avgRounds*b.maps))/mapsN)*10)/10;
+  const overCount=(a.over215Count||0)+(b.over215Count||0);
+  const overRate=Math.round(overCount/mapsN*100);
+  // ตัดสินจาก 2 สัญญาณ: เฉลี่ยรวม vs 21.5 และ อัตราที่เคยเกิน
+  const lean = (avg>21.5?1:0) + (overRate>50?1:0); // 0-2
+  const isOver = avg>21.5 ? overRate>=45 : overRate>55; // เฉลี่ยเกินก็ค่อนไป over, ไม่งั้นต้อง rate สูงจริง
+  const pick = isOver ? 'OVER 21.5 ✅' : 'UNDER 21.5 ❌';
+  const pickColor = isOver ? 'var(--win)' : 'var(--accent)';
+  return `<div class="card">
+    <div class="muted" style="font-size:13px">🎲 สกอร์รวมต่อแมป เกิน 21.5?</div>
+    <div style="font-size:20px;font-weight:800;margin:6px 0;color:${pickColor}">${pick}</div>
+    <div class="row"><span class="muted">เฉลี่ยรวม/แมป</span><span><b>${avg}</b> รอบ</span></div>
+    <div class="row" style="margin-top:4px"><span class="muted">แมปที่เคยเกิน 21.5</span><span><b>${overRate}%</b> <span class="muted">(${overCount}/${mapsN})</span></span></div>
+    <div class="bar" style="margin-top:8px"><div class="a" style="width:${overRate}%">เกิน ${overRate}%</div><div class="b">${100-overRate}% ไม่เกิน</div></div>
+    <div class="note">21.5 = สกอร์รวมสองทีมต่อแมป (เช่น 13-9=22 → เกิน) อิงจากฟอร์มล่าสุด ${mapsN} แมป</div>
+  </div>`;
+}
+
 function renderH2H(d){
   const t1=esc(d.team1.name), t2=esc(d.team2.name);
   const fv=favored(d);
@@ -318,6 +363,10 @@ function renderH2H(d){
   // ได้เปรียบ
   html += `<div class="card fav"><div class="muted">🔮 ทีมที่ได้เปรียบ</div>
     <div style="font-size:24px;font-weight:800;margin-top:4px">${esc(fv.name)} ${fv.name!=='สูสี'?`(${fv.pct}%)`:''}</div></div>`;
+
+  // ทำนาย: ปืนพก + total rounds over/under 21.5
+  html += `<div class="section-title">🎯 ทำนายเชิงสถิติ</div>`;
+  html += `<div class="grid2">${pistolPredictCard(d,t1,t2)}${totalsPredictCard(d,t1,t2)}</div>`;
 
   // ประวัติเจอกัน
   html += `<div class="section-title">⚔️ ประวัติเจอกันโดยตรง (${d.h2h.meetings} แมตช์)</div>`;

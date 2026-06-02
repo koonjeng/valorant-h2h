@@ -21,6 +21,7 @@ function buildForm(name, matches) {
   const perMap = {};
   let mapsPlayed = 0, mapWins = 0;
   let r1W = 0, r1P = 0, r13W = 0, r13P = 0;
+  let totalRoundsSum = 0, totalRoundsMaps = 0, over215 = 0; // total rounds ต่อแมป
 
   for (const match of matches) {
     const side = sideOf(name, match.teams) || 1; // mock จะ fallback เป็น side1
@@ -33,6 +34,14 @@ function buildForm(name, matches) {
       perMap[m.name] ??= { played: 0, won: 0 };
       perMap[m.name].played++;
       if (won) perMap[m.name].won++;
+
+      // total rounds = สกอร์รวมสองฝั่งของแมปนั้น (เช่น 13-9 = 22)
+      const tot = (Number(m.score1) || 0) + (Number(m.score2) || 0);
+      if (tot > 0) {
+        totalRoundsSum += tot;
+        totalRoundsMaps++;
+        if (tot > 21.5) over215++;
+      }
 
       const r1 = m.rounds.find((r) => r.n === 1);
       const r13 = m.rounds.find((r) => r.n === 13);
@@ -51,6 +60,12 @@ function buildForm(name, matches) {
       r1Rate: pct(r1W, r1P),
       r13Rate: pct(r13W, r13P),
       overallRate: pct(r1W + r13W, r1P + r13P),
+    },
+    totals: {
+      maps: totalRoundsMaps,
+      avgRounds: totalRoundsMaps ? Math.round((totalRoundsSum / totalRoundsMaps) * 10) / 10 : 0,
+      over215Count: over215,
+      over215Rate: pct(over215, totalRoundsMaps),
     },
     maps: Object.entries(perMap)
       .map(([map, v]) => ({ map, played: v.played, won: v.won, winRate: pct(v.won, v.played) }))
