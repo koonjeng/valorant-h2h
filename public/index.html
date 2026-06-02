@@ -172,7 +172,7 @@ function renderFilter(){
     <div class="chips">`+
     events.map(e=>{
       const on=selectedEvents.has(e);
-      return `<div class="chip ${on?'on':''}" onclick="toggleEvent(${JSON.stringify(e)})">
+      return `<div class="chip ${on?'on':''}" onclick='toggleEvent(${esc(JSON.stringify(e))})'>
         <span class="ck">${on?'✓':''}</span>${esc(e)} <span class="ct">${counts[e]}</span></div>`;
     }).join('')+`</div></div>`;
 }
@@ -277,7 +277,7 @@ function h2hFilterBar(d){
   const sel = h2hEvents || new Set(events);
   const chips = d.availableEvents.map(({event,count})=>{
     const on=sel.has(event);
-    return `<div class="chip ${on?'on':''}" onclick='toggleH2HEvent(${JSON.stringify(event)},${JSON.stringify(events)})'>
+    return `<div class="chip ${on?'on':''}" onclick='toggleH2HEvent(${esc(JSON.stringify(event))},${esc(JSON.stringify(events))})'>
       <span class="ck">${on?'✓':''}</span>${esc(event)} <span class="ct">${count}</span></div>`;
   }).join('');
   return `<div class="filter"><div class="lbl">
