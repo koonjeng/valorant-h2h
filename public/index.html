@@ -17,6 +17,8 @@ body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:
 .muted{color:var(--muted)}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px;transition:.15s}
 .card.click{cursor:pointer}.card.click:hover{border-color:var(--accent);transform:translateY(-2px)}
+a.card,a.btn{text-decoration:none;color:inherit}
+a.btn{display:inline-block}
 .tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--panel2);color:var(--muted)}
 .tag.live{background:var(--accent);color:#fff}
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -207,13 +209,14 @@ async function loadLive(){
 }
 
 function actions(m){
+  // เปิดแท็บใหม่ด้วย <a target="_blank"> ไปยัง hash route
   return `<div class="row" style="margin-top:10px;gap:8px;justify-content:flex-start">
-    <button class="btn" onmouseenter='prefetchH2H(${JSON.stringify(m)})' onclick='event.stopPropagation();openH2H(${JSON.stringify(m)})'>🔮 วิเคราะห์ H2H</button>
-    <button class="btn" style="background:var(--panel2)" onclick='event.stopPropagation();openScoreboard(${JSON.stringify(m)})'>📋 Scoreboard</button>
+    <a class="btn" target="_blank" href="${hrefFor('h2h',m)}" onmouseenter='prefetchH2H(${JSON.stringify(m)})' onclick='event.stopPropagation()'>🔮 วิเคราะห์ H2H</a>
+    <a class="btn" style="background:var(--panel2)" target="_blank" href="${hrefFor('sb',m)}" onclick='event.stopPropagation()'>📋 Scoreboard</a>
   </div>`;
 }
 function matchCard(m){
-  return `<div class="card click" onmouseenter='prefetchH2H(${JSON.stringify(m)})' onclick='openH2H(${JSON.stringify(m)})'>
+  return `<a class="card click" style="display:block" target="_blank" href="${hrefFor('h2h',m)}" onmouseenter='prefetchH2H(${JSON.stringify(m)})'>
     <div class="row"><span class="tag">${esc(m.matchSeries||'Match')}</span>
       <span class="muted">${esc(m.matchEvent)}</span></div>
     <div class="vsrow">
@@ -222,10 +225,10 @@ function matchCard(m){
       <span class="teams t-r">${esc(m.team2)}</span></div>
     <div class="muted" style="font-size:12px;margin-top:6px">⏱ ${esc(m.timeUntil)}</div>
     ${actions(m)}
-  </div>`;
+  </a>`;
 }
 function liveCard(m){
-  return `<div class="card click" onclick='openScoreboard(${JSON.stringify(m)})'>
+  return `<a class="card click" style="display:block" target="_blank" href="${hrefFor('sb',m)}">
     <div class="row"><span class="tag live">LIVE</span><span class="muted">${esc(m.matchEvent)}</span></div>
     <div class="vsrow">
       <span class="teams t-l">${esc(m.team1)}</span>
@@ -233,7 +236,7 @@ function liveCard(m){
       <span class="teams t-r">${esc(m.team2)}</span></div>
     ${m.currentMap?`<div class="muted" style="font-size:12px;margin-top:6px">แมปปัจจุบัน: ${esc(m.currentMap)}</div>`:''}
     ${actions(m)}
-  </div>`;
+  </a>`;
 }
 
 // ---------- H2H ----------
@@ -391,7 +394,34 @@ function renderH2H(d){
   html += `<div class="section-title">📊 ฟอร์มล่าสุด (per-map win rate + pistol)</div>`;
   html += `<div class="grid2">${formCard(d.form.team1)}${formCard(d.form.team2)}</div>`;
 
+  // ผลแมตช์ล่าสุดที่ใช้วิเคราะห์ (รายการ + สกอร์)
+  html += `<div class="section-title">📃 แมตช์ล่าสุดที่ใช้วิเคราะห์</div>`;
+  html += `<div class="grid2">${recentCard(d.team1.name,d.recent&&d.recent.team1)}${recentCard(d.team2.name,d.recent&&d.recent.team2)}</div>`;
+
   app.innerHTML = html;
+}
+
+// การ์ดแสดงผลแมตช์ล่าสุดของทีม (รายการ + คู่แข่ง + สกอร์ + รายแมป)
+function recentCard(name, list){
+  if(!list || !list.length) return `<div class="card muted">${esc(name)}: ไม่มีข้อมูลแมตช์ล่าสุด</div>`;
+  const rows = list.map(m=>{
+    const badge = m.result==='W'
+      ? `<span style="color:var(--win);font-weight:800">ชนะ</span>`
+      : `<span style="color:var(--accent);font-weight:800">แพ้</span>`;
+    const maps = (m.maps||[]).map(mp=>
+      `<span class="pill" style="margin:2px 4px 0 0;background:${mp.won?'rgba(34,197,94,.15)':'var(--panel2)'}">${esc(mp.map)} ${mp.my}-${mp.op}</span>`
+    ).join('');
+    return `<div style="padding:8px 0;border-bottom:1px solid var(--line)">
+      <div class="row"><span style="font-weight:600">${badge} vs ${esc(m.opponent)}</span>
+        <span class="muted">${m.mapScore}</span></div>
+      <div class="muted" style="font-size:11px;margin:2px 0 4px">${esc(m.event)}</div>
+      <div>${maps}</div>
+    </div>`;
+  }).join('');
+  return `<div class="card">
+    <div style="font-weight:800;font-size:16px;margin-bottom:6px">${esc(name)}</div>
+    ${rows}
+  </div>`;
 }
 
 // เทียบ winRate รายแมปของ 2 ทีม แล้วบอกว่าใครได้เปรียบในแต่ละด่าน
@@ -597,7 +627,31 @@ function renderPerformance(map,t1,t2){
     (scrape เพิ่มได้ บอกได้ถ้าอยากให้ทำต่อ)</div>`;
 }
 
-showHome();
+// ---------- ROUTER (รองรับเปิดแท็บใหม่ผ่าน hash) ----------
+// #h2h=<path>|<team1>|<team2>  หรือ  #sb=<path>|<team1>|<team2>
+function parseHash(){
+  const h=location.hash.slice(1);
+  if(!h) return null;
+  const eq=h.indexOf('=');
+  if(eq<0) return null;
+  const view=h.slice(0,eq);
+  const parts=decodeURIComponent(h.slice(eq+1)).split('|');
+  return { view, m:{ matchPage:parts[0]||'', team1:parts[1]||'Team A', team2:parts[2]||'Team B' } };
+}
+function routeFromHash(){
+  const r=parseHash();
+  if(!r){ showHome(); return; }
+  if(r.view==='h2h') openH2H(r.m);
+  else if(r.view==='sb') openScoreboard(r.m);
+  else showHome();
+}
+// สร้าง href สำหรับเปิดแท็บใหม่
+function hrefFor(view,m){
+  return '#'+view+'='+encodeURIComponent([m.matchPage||'',m.team1||'',m.team2||''].join('|'));
+}
+window.addEventListener('hashchange', routeFromHash);
+
+routeFromHash();
 </script>
 </body>
 </html>

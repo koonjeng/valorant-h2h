@@ -192,8 +192,35 @@ export async function analyzeH2H(matchPath, fb1 = 'Team A', fb2 = 'Team B', even
     selectedEvents: Array.isArray(eventFilter) ? eventFilter : null,
     filtered,
     form: { team1: formTeam1, team2: formTeam2 },
+    recent: { team1: recentList(name1, matchesA), team2: recentList(name2, matchesB) },
     h2h,
   };
+}
+
+// สรุปผลแมตช์ล่าสุดของทีม (ไว้แสดงในแผงข้าง) — 1 แถวต่อ 1 แมตช์
+function recentList(name, matches) {
+  const out = [];
+  for (const match of matches) {
+    if (!match.maps || !match.maps.length) continue;
+    const side = sideOf(name, match.teams) || 1;
+    const opp = match.teams ? (side === 1 ? match.teams[1] : match.teams[0]) : '?';
+    let mw = 0, ml = 0; // แมปที่ชนะ/แพ้ในแมตช์นี้
+    const maps = match.maps.map((m) => {
+      const my = side === 1 ? m.score1 : m.score2;
+      const op = side === 1 ? m.score2 : m.score1;
+      const won = my > op;
+      won ? mw++ : ml++;
+      return { map: m.name, my, op, won };
+    });
+    out.push({
+      event: match.event || 'อื่นๆ',
+      opponent: opp || '?',
+      result: mw > ml ? 'W' : 'L',
+      mapScore: `${mw}-${ml}`,
+      maps,
+    });
+  }
+  return out;
 }
 
 function mockPaths(name, n) {
