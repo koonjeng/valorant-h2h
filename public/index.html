@@ -208,15 +208,15 @@ async function loadLive(){
   }catch(e){/* ignore */}
 }
 
+function openTab(view,m){ window.open(hrefFor(view,m),'_blank'); }
 function actions(m){
-  // เปิดแท็บใหม่ด้วย <a target="_blank"> ไปยัง hash route
   return `<div class="row" style="margin-top:10px;gap:8px;justify-content:flex-start">
-    <a class="btn" target="_blank" href="${hrefFor('h2h',m)}" onmouseenter='prefetchH2H(${JSON.stringify(m)})' onclick='event.stopPropagation()'>🔮 วิเคราะห์ H2H</a>
-    <a class="btn" style="background:var(--panel2)" target="_blank" href="${hrefFor('sb',m)}" onclick='event.stopPropagation()'>📋 Scoreboard</a>
+    <button class="btn" onmouseenter='prefetchH2H(${JSON.stringify(m)})' onclick='event.stopPropagation();openTab("h2h",${JSON.stringify(m)})'>🔮 วิเคราะห์ H2H</button>
+    <button class="btn" style="background:var(--panel2)" onclick='event.stopPropagation();openTab("sb",${JSON.stringify(m)})'>📋 Scoreboard</button>
   </div>`;
 }
 function matchCard(m){
-  return `<a class="card click" style="display:block" target="_blank" href="${hrefFor('h2h',m)}" onmouseenter='prefetchH2H(${JSON.stringify(m)})'>
+  return `<div class="card click" onmouseenter='prefetchH2H(${JSON.stringify(m)})' onclick='openTab("h2h",${JSON.stringify(m)})'>
     <div class="row"><span class="tag">${esc(m.matchSeries||'Match')}</span>
       <span class="muted">${esc(m.matchEvent)}</span></div>
     <div class="vsrow">
@@ -225,10 +225,10 @@ function matchCard(m){
       <span class="teams t-r">${esc(m.team2)}</span></div>
     <div class="muted" style="font-size:12px;margin-top:6px">⏱ ${esc(m.timeUntil)}</div>
     ${actions(m)}
-  </a>`;
+  </div>`;
 }
 function liveCard(m){
-  return `<a class="card click" style="display:block" target="_blank" href="${hrefFor('sb',m)}">
+  return `<div class="card click" onclick='openTab("sb",${JSON.stringify(m)})'>
     <div class="row"><span class="tag live">LIVE</span><span class="muted">${esc(m.matchEvent)}</span></div>
     <div class="vsrow">
       <span class="teams t-l">${esc(m.team1)}</span>
@@ -236,7 +236,7 @@ function liveCard(m){
       <span class="teams t-r">${esc(m.team2)}</span></div>
     ${m.currentMap?`<div class="muted" style="font-size:12px;margin-top:6px">แมปปัจจุบัน: ${esc(m.currentMap)}</div>`:''}
     ${actions(m)}
-  </a>`;
+  </div>`;
 }
 
 // ---------- H2H ----------
