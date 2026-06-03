@@ -62,23 +62,31 @@ export async function matchTeams(matchPath) {
   });
 }
 
-/** ดึง path แมตช์ที่จบแล้วของทีม (ใหม่ → เก่า) */
+/** ดึง path แมตช์ที่จบแล้วของทีม (ใหม่ → เก่า) — 1 แมตช์ต่อ 1 path (ไม่ซ้ำ) */
 export async function teamRecentMatches(teamId, slug, limit = 6) {
   return cached(`teammatches:${teamId}:${limit}`, 600_000, async () => {
     const $ = load(await getHtml(`/team/matches/${teamId}/${slug}/?group=completed`));
+    // ตัด query (?game=...) ออก แล้วเก็บเฉพาะ match path หลัก dedup ตาม match ID
+    const seen = new Set();
     const paths = [];
-    $('a.m-item, a.wf-card.m-item, a.fc-flex').each((_, el) => {
-      const href = $(el).attr('href') || '';
-      if (/^\/\d+\//.test(href)) paths.push(href);
-    });
+    const add = (href) => {
+      if (!href) return;
+      const clean = href.split('?')[0].split('#')[0]; // ตัด ?game= / #
+      const m = clean.match(/^\/(\d{4,})\//);          // /<matchId>/...
+      if (!m) return;
+      if (seen.has(m[1])) return;                      // ซ้ำแมตช์เดิม → ข้าม
+      seen.add(m[1]);
+      paths.push(clean);
+    };
+    $('a.m-item, a.wf-card.m-item, a.fc-flex').each((_, el) => add($(el).attr('href')));
     // เผื่อ selector ไม่ตรง — กวาด a ทุกตัวที่ลิงก์ไปหน้าแมตช์
     if (paths.length === 0) {
       $('a').each((_, el) => {
         const href = $(el).attr('href') || '';
-        if (/^\/\d{5,}\/[a-z0-9-]/i.test(href) && !href.includes('/team/')) paths.push(href);
+        if (!href.includes('/team/')) add(href);
       });
     }
-    return [...new Set(paths)].slice(0, limit);
+    return paths.slice(0, limit);
   });
 }
 
