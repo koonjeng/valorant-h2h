@@ -4,7 +4,7 @@ import { cached } from './cache.js';
 
 const API = 'https://vlrggapi.vercel.app';
 
-async function getJson(url, { timeoutMs = 6000, retries = 1 } = {}) {
+async function getJson(url, { timeoutMs = Number(process.env.VLRGG_TIMEOUT || 12000), retries = 2 } = {}) {
   let lastErr;
   for (let attempt = 0; attempt <= retries; attempt++) {
     const ctrl = new AbortController();
@@ -20,8 +20,7 @@ async function getJson(url, { timeoutMs = 6000, retries = 1 } = {}) {
     } catch (e) {
       clearTimeout(timer);
       lastErr = e.name === 'AbortError' ? new Error(`vlrggapi timeout (${timeoutMs}ms)`) : e;
-      // backoff สั้นๆ ก่อน retry
-      if (attempt < retries) await new Promise((r) => setTimeout(r, 400));
+      if (attempt < retries) await new Promise((r) => setTimeout(r, 600)); // backoff ก่อน retry
     }
   }
   throw lastErr;
