@@ -147,7 +147,9 @@ async function showHome(){
 async function loadUpcoming(){
   try{
     const data = await getJSON('/api/upcoming');
-    upcomingAll = data.filter(m=>m.team1 && m.team1!=='TBD');
+    // กรองแมตช์ที่ทีมยังไม่ถูกกำหนด (TBD) ออกทั้ง 2 ฝั่ง — กดดูไม่ได้อยู่แล้ว
+    const isTBD=(t)=>!t||/^tbd$/i.test(t.trim());
+    upcomingAll = data.filter(m=>!isTBD(m.team1) && !isTBD(m.team2));
     // ครั้งแรก: เลือกทุกรายการ
     if(selectedEvents===null){
       selectedEvents = new Set(upcomingAll.map(m=>m.matchEvent||'อื่นๆ'));
@@ -242,11 +244,20 @@ function liveCard(m){
 // ---------- H2H ----------
 let currentMatch = null;
 
+function isTBDteam(t){ return !t || /^tbd$/i.test(String(t).trim()); }
+
 async function openH2H(m, keepFilter){
   if(liveTimer) clearInterval(liveTimer);
   currentMatch = m;
   if(!keepFilter) h2hEvents = null; // เปิดใหม่จากแมตช์อื่น → รีเซ็ตตัวกรอง
   window.scrollTo(0,0);
+  // แมตช์ที่ทีมยังไม่ถูกกำหนด (TBD) — วิเคราะห์ไม่ได้
+  if(isTBDteam(m.team1)||isTBDteam(m.team2)){
+    app.innerHTML = `<span class="back" onclick="showHome()">← กลับหน้าแรก</span>
+      <h2 style="margin:4px 0">${esc(m.team1)} <span class="muted">vs</span> ${esc(m.team2)}</h2>
+      <div class="warn">ยังวิเคราะห์ไม่ได้ — แมตช์นี้ยังไม่รู้ว่าทีมไหนจะเข้า (TBD) เพราะรอบก่อนหน้ายังแข่งไม่จบ ลองกลับมาใหม่เมื่อจับคู่แล้วครับ</div>`;
+    return;
+  }
   app.innerHTML = `<span class="back" onclick="showHome()">← กลับหน้าแรก</span>
     <h2 style="margin:4px 0">${esc(m.team1)} <span class="muted">vs</span> ${esc(m.team2)}</h2>
     <div class="muted">⏳ กำลังวิเคราะห์ — ดึงประวัติแมตช์จาก vlr.gg
