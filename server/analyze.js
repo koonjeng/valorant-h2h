@@ -149,9 +149,18 @@ export async function analyzeH2H(matchPath, fb1 = 'Team A', fb2 = 'Team B', even
   if (pathsB.length === 0) { pathsB = mockPaths(name2, 6); source = 'mock'; }
 
   // scrape แบบจำกัด concurrency (รวมทั้ง 2 ทีม) — กัน OOM/CPU spike บน Render free
+  // แต่ละหน้ามี hard timeout: ถ้าค้างเกินกำหนด คืน mock แทนการแขวนทั้งคำขอ
   const t1 = Date.now();
   const allPaths = [...pathsA, ...pathsB];
-  const allMatches = await pMap(allPaths, scrapeMatch, Number(process.env.H2H_CONC || 8));
+  const PAGE_MS = Number(process.env.H2H_PAGE_MS || 12000);
+  const safeScrape = (p) =>
+    Promise.race([
+      scrapeMatch(p),
+      new Promise((resolve) =>
+        setTimeout(() => resolve({ teams: [], event: '', maps: [], source: 'timeout' }), PAGE_MS)
+      ),
+    ]);
+  const allMatches = await pMap(allPaths, safeScrape, Number(process.env.H2H_CONC || 4));
   console.log(`[h2h] scraped ${allPaths.length} pages in ${Date.now() - t1}ms  rss=${Math.round(process.memoryUsage().rss / 1048576)}MB`);
   let matchesA = allMatches.slice(0, pathsA.length);
   let matchesB = allMatches.slice(pathsA.length);
