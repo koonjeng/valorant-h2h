@@ -149,10 +149,11 @@ export async function analyzeH2H(matchPath, fb1 = 'Team A', fb2 = 'Team B', even
   if (pathsB.length === 0) { pathsB = mockPaths(name2, 6); source = 'mock'; }
 
   // scrape แบบจำกัด concurrency (รวมทั้ง 2 ทีม) — กัน OOM/CPU spike บน Render free
-  // แต่ละหน้ามี hard timeout: ถ้าค้างเกินกำหนด คืน mock แทนการแขวนทั้งคำขอ
+  // แต่ละหน้ามี hard timeout; หน้าที่ timeout จะ retry อีก 1 รอบ (กันฟอร์มทีมหายบน Render)
   const t1 = Date.now();
   const allPaths = [...pathsA, ...pathsB];
-  const PAGE_MS = Number(process.env.H2H_PAGE_MS || 12000);
+  const PAGE_MS = Number(process.env.H2H_PAGE_MS || 18000);
+  const CONC = Number(process.env.H2H_CONC || 4);
   const safeScrape = (p) =>
     Promise.race([
       scrapeMatch(p),
@@ -160,7 +161,16 @@ export async function analyzeH2H(matchPath, fb1 = 'Team A', fb2 = 'Team B', even
         setTimeout(() => resolve({ teams: [], event: '', maps: [], source: 'timeout' }), PAGE_MS)
       ),
     ]);
-  const allMatches = await pMap(allPaths, safeScrape, Number(process.env.H2H_CONC || 4));
+  let allMatches = await pMap(allPaths, safeScrape, CONC);
+  // retry เฉพาะหน้าที่ timeout/พลาด (maps ว่าง) อีก 1 รอบ
+  const retryIdx = allMatches
+    .map((m, i) => ((!m.maps || !m.maps.length) && !allPaths[i].startsWith('/mock') ? i : -1))
+    .filter((i) => i >= 0);
+  if (retryIdx.length) {
+    console.log(`[h2h] retrying ${retryIdx.length} failed pages…`);
+    const retried = await pMap(retryIdx.map((i) => allPaths[i]), safeScrape, CONC);
+    retryIdx.forEach((idx, k) => { if (retried[k]?.maps?.length) allMatches[idx] = retried[k]; });
+  }
   console.log(`[h2h] scraped ${allPaths.length} pages in ${Date.now() - t1}ms  rss=${Math.round(process.memoryUsage().rss / 1048576)}MB`);
   let matchesA = allMatches.slice(0, pathsA.length);
   let matchesB = allMatches.slice(pathsA.length);

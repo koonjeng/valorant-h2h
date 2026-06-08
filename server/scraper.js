@@ -32,7 +32,7 @@ export async function pMap(items, fn, limit = 2) {
   return results;
 }
 
-async function getHtml(path, timeoutMs = Number(process.env.VLR_TIMEOUT || 7000)) {
+async function getHtml(path, timeoutMs = Number(process.env.VLR_TIMEOUT || 15000)) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
